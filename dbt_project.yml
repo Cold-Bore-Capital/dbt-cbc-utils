@@ -1,0 +1,13 @@
+name: 'cbc_utils'
+version: '0.0.1'
+
+require-dbt-version: [">=1.6.0", "<1.9.0"]
+
+profile: 'cbc_utils'
+
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
