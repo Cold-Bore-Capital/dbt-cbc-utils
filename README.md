@@ -1,8 +1,15 @@
 # CBC Utils
 
-# Macros
+## Usage
+Add the following to the packages.yml file in your dbt project.
+```
+  - git: "https://github.com/Cold-Bore-Capital/dbt-cbc-utils.git"
+    revision: <get latest release>
+```
 
-## `generate_ma_cols` - Generate Moving Average Columns
+## Macros
+
+### `generate_ma_cols` - Generate Moving Average Columns
 
 This macro is designed to create moving average columns over a given date column and dimensions. 
 
@@ -28,11 +35,11 @@ left join revenue as r on dlcj.date_at = r.date_at and dlcj.location_id = r.loca
 left join fct_dvm_utilization as u on dlcj.date_at = u.date_at and dlcj.location_id = u.location_id
 
 ```
-### Important Note: Missing Columns and Moving Averages
+#### Important Note: Missing Columns and Moving Averages
 
 In a scenario where a value is missing for a given row, the results of a chart will appear wrong. In the example above, if the date/location cross join was not present, on days where a location is not open, no row will exist and a MA for that day will not display. Cross joining with a date/location table is a common practice to ensure that all dates are present in the dataset.
 
-## `generate_pop_columns` - Generate Period Over Period Columns
+### `generate_pop_columns` - Generate Period Over Period Columns
 This macro is used to generate a series of period-over-period columns.
 
 Example 
