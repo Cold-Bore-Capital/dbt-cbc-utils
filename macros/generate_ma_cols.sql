@@ -19,18 +19,19 @@
         {%- set column_alias -%}
             {{ clean_column }}_{{ days }}{{ grain }}_ma
         {%- endset -%}
-        {{- comma -}}round(
+        {{- comma -}}
+        {{- space -}}avg(
         {%- if add_coalesce == true -%}
-         {{- space -}}coalesce(
+            coalesce(
         {%- endif -%}
-        {{- space -}}avg(coalesce({{ column_name }},0)) over (
+        {{ column_name }}
+        {%- if add_coalesce == true -%}
+            ,0)) over (
+        {%- endif -%}
         {%- if dimensions -%}
             partition by {{ dimensions | join(", ") }}
         {%- endif -%}
-        {{- space -}}order by {{ date_field }} rows between {{ days - 1}} preceding and current row)
-        {%- if add_coalesce == true -%}
-            , 0)
-        {%- endif %}, 0) as {{ column_alias }}
+        {{- space -}}order by {{ date_field }} rows between {{ days - 1}} preceding and current row) as {{ column_alias }}
     {%- endfor -%}
 
 {%- endfor -%}
