@@ -20,6 +20,11 @@
         {%- endif -%}
     {%- endif %}
     {%- for days in ma_days -%}
+        {%- if loop.index > 1 %}
+            {%- if comma_at_end == false -%}
+                {%- set comma = "\n, " -%}
+            {%- endif -%}
+        {%- endif %}
         {%- set column_alias -%}
             {{ clean_column }}_{{ days }}{{ grain }}_ma
         {%- endset -%}
