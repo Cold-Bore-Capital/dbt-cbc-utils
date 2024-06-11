@@ -11,30 +11,48 @@ Add the following to the packages.yml file in your dbt project.
 
 ### `generate_ma_cols` - Generate Moving Average Columns
 
-This macro is designed to create moving average columns over a given date column and dimensions. 
+This macro is designed to create moving average columns over a given date column and dimensions. The advantage to setting a moving average in the model vs as a table calculation is that the model has access to data outside the range of the final chart. When setting an MA in a table function, the first few rows will be averaging over fewer than the desired number of days. This can lead to wild swings in the line. By setting the MA in the model, the MA will be calculated using data that is filtered out of the final chart, providing a more accurate representation of the data.
 
-Example Usage
+This approach is only useful for highly aggregated models without a large number of dimension, as shown in the examples. 
+
+#### Arguments
+- `column_names` (required): A list of column names to generate moving averages for.
+- `date_field` (required): The date field to generate the moving average over.
+- `dimensions` (required): A list of dimensions to partition the moving average over. 
+- `ma_days` (required): A list of integers representing the number of days to calculate the moving average over.
+- `grain` (optional): The grain of the moving average. Default is 'd' for daily.
+- `add_coalesce` (optional): If set to true, a coalesce function will be wrapped around the value in the moving average. Default is true. Example with `avg(coalesce(total_revenue,0)) over (partition by location_id order by date_at rows between 6 preceding and current row) as total_revenue_7d_ma` and without `avg(total_revenue) over (partition by location_id order by date_at rows between 6 preceding and current row) as total_revenue_7d_ma`
+- `comma_at_end` (optional): If set to `true`, a comma will be added at the end of the generated column. If `false`, the comma will be placed at the start of the row. Default is `true`.
+
+*Note:* A column will be generated for every combination of `column_names`, `dimensions`, and `ma_days` value. Adding many dimensions and columns can result in a large number of columns being generated.
+
+#### Example Usage
 ```sql
 select
-    dlcj.date_at
-    , dlcj.location_id
-    , dlcj.location_name
-    , dlcj.network_name
-    , coalesce(r.revenue_total,0)        as revenue
-    , coalesce(u._utilized_hours, 0)     as utilized_hours
-    , coalesce(u._non_utilized_hours, 0) as non_utilized_hours
-    , {{ cbc_utils.generate_ma_cols(column_names =['revenue', 'utilized_hours', 'non_utilized_hours'],
-                        date_field='dlcj.date_at',
-                        dimensions=['dlcj.location_id'],
-                        ma_days=[7],
-                        grain='d',
+    date_at,
+    location_id,
+    location_name,
+    network_name,
+    coalesce(revenue_total,0)        as revenue,
+    coalesce(_utilized_hours, 0)     as utilized_hours,
+    coalesce(_non_utilized_hours, 0) as non_utilized_hours,
+    {{ cbc_utils.generate_ma_cols(column_names =['revenue', 'utilized_hours', 'non_utilized_hours'],
+                        date_field='date_at',
+                        dimensions=['location_id'],
+                        ma_days=[7], -- You could put 7, 14, 28 and columns will generate for each.
+                        grain='d', -- This is for display purposes. The column name will be set using this value.
                         add_coalesce=true) }}
 
-from date_location_cross_join as dlcj
-left join revenue as r on dlcj.date_at = r.date_at and dlcj.location_id = r.location_id
-left join fct_dvm_utilization as u on dlcj.date_at = u.date_at and dlcj.location_id = u.location_id
+from revenue
 
 ```
+#### Example output 
+```sql
+avg(coalesce(total_revenue,0)) over (partition by location_id order by date_at rows between 6 preceding and current row) as total_revenue_7d_ma,
+avg(coalesce(medical_revenue,0)) over (partition by location_id order by date_at rows between 6 preceding and current row) as medical_revenue_7d_ma,
+avg(coalesce(service_revenue,0)) over (partition by location_id order by date_at rows between 6 preceding and current row) as service_revenue_7d_ma,
+```
+
 #### Important Note: Missing Columns and Moving Averages
 
 In a scenario where a value is missing for a given row, the results of a chart will appear wrong. In the example above, if the date/location cross join was not present, on days where a location is not open, no row will exist and a MA for that day will not display. Cross joining with a date/location table is a common practice to ensure that all dates are present in the dataset.
@@ -42,38 +60,43 @@ In a scenario where a value is missing for a given row, the results of a chart w
 ### `generate_pop_columns` - Generate Period Over Period Columns
 This macro is used to generate a series of period-over-period columns.
 
-Example 
+#### Arguments
+- `column_names` (required): A list of column names to generate period-over-period columns for.
+- `date_field` (required): The date field to generate the period-over-period columns over.
+- `dimensions` (required): A list of dimensions to partition the period-over-period columns over.
+- `look_back_values` (required): A list of integers representing the number of days to look back for each period-over-period column.
+- `grain` (optional): The grain of the period-over-period columns. Default is 'd' for daily.
+- `comma_at_end` (optional): If set to `true`, a comma will be added at the end of the generated column. If `false`, the comma will be placed at the start of the row. Default is `true`.
+
+#### Example Usage
 
 ```sql
 select
-    r.date_at
-    , r.location_id
-    , r.location_name
-    , r.network_name
-    , coalesce(r.total_revenue, 0)                   as total_revenue
-    , coalesce(r.discount_sum, 0)                    as discounted_revenue
-    , coalesce(r._medical_revenue, 0)                as medical_revenue
-    , coalesce(r._service_revenue, 0)                as service_revenue
-    , coalesce(r._first_medical_revenue, 0)          as first_medical_revenue
-    , coalesce(r._first_service_revenue, 0)          as first_service_revenue
-    , coalesce(r.order_count, 0)                     as order_count
-    , coalesce(a.medical_appointment_count, 0)       as medical_appointment_count
-    , coalesce(a.service_appointment_count, 0)       as service_appointment_count
-    , coalesce(a.first_medical_appointment_count, 0) as first_medical_appointment_count
-    , coalesce(a.medical_animal_count, 0)            as medical_animal_count
-    , coalesce(a.service_animal_count, 0)            as service_animal_count
-    , coalesce(r.order_with_appointments_count, 0)   as order_with_appointments_count
+    date_at
+    , location_id
+    , location_name
+    , network_name
+    , coalesce(total_revenue, 0)    as total_revenue
+    , coalesce(_medical_revenue, 0) as medical_revenue
+    , coalesce(_service_revenue, 0) as service_revenue
 
-    , {{ cbc_utils.generate_pop_columns(column_names = ['total_revenue', 'order_count', 'medical_revenue', 'service_revenue', 'first_medical_revenue',
-                                            'first_service_revenue', 'medical_appointment_count', 'service_appointment_count',
-                                            'first_medical_appointment_count', 'service_animal_count'],
-                            date_field= 'r.date_at',
-                            dimensions = ['r.location_id'],
-                            look_back_values = [28, 90, 180, 365],
-                            grain = 'd') }}
-from revenue as r
-left join appts as a
-    on r.date_at = a.date_at and r.location_id = a.location_id
-order by 1 desc, 2
+    , {{ cbc_utils.generate_pop_columns(column_names = ['total_revenue', 'medical_revenue', 'service_revenue'],
+                                        date_field= 'date_at',
+                                        dimensions = ['location_id'],
+                                        look_back_values = [28, 90, 180, 365],
+                                        grain = 'd', -- This is for display purposes. The column name will be set using this value.
+                                        comma_at_end=false) }}
+from revenue
 
+```
+*Note:* A sql column will be generated for every combination of `column_names` element and `dimensions` element. Adding many dimension & columns can result in a large number of columns being generated.
+
+#### Example output 
+
+```sql
+, coalesce(lag(total_revenue, 28) over (partition by r.location_id order by r.date_at), 0) as total_revenue_28d
+, coalesce(lag(total_revenue, 90) over (partition by r.location_id order by r.date_at), 0) as total_revenue_90d
+, coalesce(lag(total_revenue, 180) over (partition by r.location_id order by r.date_at), 0) as total_revenue_180d
+, coalesce(lag(total_revenue, 365) over (partition by r.location_id order by r.date_at), 0) as total_revenue_365d
+<--... continues for each column ...-->
 ```
