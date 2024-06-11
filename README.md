@@ -24,7 +24,7 @@ This approach is only useful for highly aggregated models without a large number
 - `add_coalesce` (optional): If set to true, a coalesce function will be wrapped around the value in the moving average. Default is true. Example with `avg(coalesce(total_revenue,0)) over (partition by location_id order by date_at rows between 6 preceding and current row) as total_revenue_7d_ma` and without `avg(total_revenue) over (partition by location_id order by date_at rows between 6 preceding and current row) as total_revenue_7d_ma`
 - `comma_at_end` (optional): If set to `true`, a comma will be added at the end of the generated column. If `false`, the comma will be placed at the start of the row. Default is `true`.
 
-*Note:* A column will be generated for every combination of `column_names`, `dimensions`, and `ma_days` value. Adding many dimensions and columns can result in a large number of columns being generated.
+*Note:* A column will be generated for every combination of `column_names` and `ma_days` value. Adding many dimensions and columns can result in a large number of columns being generated.
 
 #### Example Usage
 ```sql
@@ -87,7 +87,7 @@ select
 from revenue
 
 ```
-*Note:* A sql column will be generated for every combination of `column_names` element and `dimensions` element. Adding many dimension & columns can result in a large number of columns being generated.
+*Note:* A sql column will be generated for every combination of `column_names` and `look_back_values`. Adding many dimension & columns can result in a large number of columns being generated.
 
 #### Example output 
 
