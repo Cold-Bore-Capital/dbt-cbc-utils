@@ -42,9 +42,7 @@ select
                         ma_days=[7], -- You could put 7, 14, 28 and columns will generate for each.
                         grain='d', -- This is for display purposes. The column name will be set using this value.
                         add_coalesce=true) }}
-
 from revenue
-
 ```
 #### Example output 
 ```sql
