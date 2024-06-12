@@ -9,7 +9,7 @@ Add the following to the packages.yml file in your dbt project.
 
 ## Macros
 
-### `generate_ma_cols` - Generate Moving Average Columns
+### `generate_ma_columns` - Generate Moving Average Columns
 
 This macro is designed to create moving average columns over a given date column and dimensions. The advantage to setting a moving average in the model vs as a table calculation is that the model has access to data outside the range of the final chart. When setting an MA in a table function, the first few rows will be averaging over fewer than the desired number of days. This can lead to wild swings in the line. By setting the MA in the model, the MA will be calculated using data that is filtered out of the final chart, providing a more accurate representation of the data.
 
@@ -36,7 +36,7 @@ select
     coalesce(revenue_total,0)        as revenue,
     coalesce(_utilized_hours, 0)     as utilized_hours,
     coalesce(_non_utilized_hours, 0) as non_utilized_hours,
-    {{ cbc_utils.generate_ma_cols(column_names =['revenue', 'utilized_hours', 'non_utilized_hours'],
+    {{ cbc_utils.generate_ma_columns(column_names =['revenue', 'utilized_hours', 'non_utilized_hours'],
                         date_field='date_at',
                         dimensions=['location_id'],
                         ma_days=[7], -- You could put 7, 14, 28 and columns will generate for each.
