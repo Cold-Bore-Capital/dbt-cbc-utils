@@ -1,7 +1,7 @@
 {#
  Generates a series of moving average columns for a given set of metric columns and dimensions.
  #}
-{%- macro generate_ma_cols(column_names, date_field, dimensions, ma_days, grain, add_coalesce=true, comma_at_end=true) -%}
+{%- macro generate_ma_colums(column_names, date_field, dimensions, ma_days, grain, add_coalesce=true, comma_at_end=true) -%}
 {%- set space = ' ' -%}
 {%- for column_name in column_names -%}
     {# used to detect the final col iteration to avoid a hanging comma #}
