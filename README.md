@@ -19,12 +19,12 @@ This approach is only useful for highly aggregated models without a large number
 - `column_names` (required): A list of column names to generate moving averages for.
 - `date_field` (required): The date field to generate the moving average over.
 - `dimensions` (required): A list of dimensions to partition the moving average over. 
-- `ma_days` (required): A list of integers representing the number of days to calculate the moving average over.
+- `ma_windows` (required): A list of integers representing the number of days/weeks/months/years to calculate the moving average over. For example, [7, 14, 28] will generate columns for 7, 14, and 28 day moving averages if the grain is set to `d` (and each row represents one day).
 - `grain` (optional): The grain of the moving average. Default is 'd' for daily.
 - `add_coalesce` (optional): If set to true, a coalesce function will be wrapped around the value in the moving average. Default is true. Example with `avg(coalesce(total_revenue,0)) over (partition by location_id order by date_at rows between 6 preceding and current row) as total_revenue_7d_ma` and without `avg(total_revenue) over (partition by location_id order by date_at rows between 6 preceding and current row) as total_revenue_7d_ma`
 - `comma_at_end` (optional): If set to `true`, a comma will be added at the end of the generated column. If `false`, the comma will be placed at the start of the row. Default is `true`.
 
-*Note:* A column will be generated for every combination of `column_names` and `ma_days` value. Adding many dimensions and columns can result in a large number of columns being generated.
+*Note:* A column will be generated for every combination of `column_names` and `ma_windows` value. Adding many dimensions and columns can result in a large number of columns being generated.
 
 #### Example Usage
 ```sql
@@ -39,7 +39,7 @@ select
     {{ cbc_utils.generate_ma_columns(column_names =['revenue', 'utilized_hours', 'non_utilized_hours'],
                         date_field='date_at',
                         dimensions=['location_id'],
-                        ma_days=[7], -- You could put 7, 14, 28 and columns will generate for each.
+                        ma_windows=[7], -- You could put 7, 14, 28 and columns will generate for each.
                         grain='d', -- This is for display purposes. The column name will be set using this value.
                         add_coalesce=true) }}
 from revenue
@@ -92,9 +92,9 @@ from revenue
 #### Example output 
 
 ```sql
-, coalesce(lag(total_revenue, 28) over (partition by r.location_id order by r.date_at), 0) as total_revenue_28d
-, coalesce(lag(total_revenue, 90) over (partition by r.location_id order by r.date_at), 0) as total_revenue_90d
-, coalesce(lag(total_revenue, 180) over (partition by r.location_id order by r.date_at), 0) as total_revenue_180d
-, coalesce(lag(total_revenue, 365) over (partition by r.location_id order by r.date_at), 0) as total_revenue_365d
+, coalesce(lag(total_revenue, 28) over (partition by r.location_id order by r.date_at), 0) as total_revenue_28d_pop
+, coalesce(lag(total_revenue, 90) over (partition by r.location_id order by r.date_at), 0) as total_revenue_90d_pop
+, coalesce(lag(total_revenue, 180) over (partition by r.location_id order by r.date_at), 0) as total_revenue_180d_pop
+, coalesce(lag(total_revenue, 365) over (partition by r.location_id order by r.date_at), 0) as total_revenue_365d_pop
 <--... continues for each column ...-->
 ```

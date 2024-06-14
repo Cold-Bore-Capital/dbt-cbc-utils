@@ -26,11 +26,11 @@
         {%- endif %}
         {%- if column_prefix is not none -%}
             {%- set column_alias -%}
-                {{ column_prefix }}_{{ clean_column }}_{{ look_back_val }}{{ grain }}
+                {{ column_prefix }}_{{ clean_column }}_{{ look_back_val }}{{ grain }}_pop
             {%- endset -%}
         {% else %}
             {%- set column_alias -%}
-                {{ clean_column }}_{{ look_back_val }}{{ grain }}
+                {{ clean_column }}_{{ look_back_val }}{{ grain }}_pop
             {%- endset -%}
         {%- endif -%}
         {%- if comma_at_end == false -%} {{- comma -}} {%- endif -%}
