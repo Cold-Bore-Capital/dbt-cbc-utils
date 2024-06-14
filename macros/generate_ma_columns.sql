@@ -1,7 +1,7 @@
 {#
  Generates a series of moving average columns for a given set of metric columns and dimensions.
  #}
-{%- macro generate_ma_columns(column_names, date_field, dimensions, ma_days, grain, add_coalesce=true, comma_at_end=true) -%}
+{%- macro generate_ma_columns(column_names, date_field, dimensions, ma_windows, grain, add_coalesce=true, comma_at_end=true) -%}
 {%- set space = ' ' -%}
 {%- for column_name in column_names -%}
     {# used to detect the final col iteration to avoid a hanging comma #}
@@ -19,14 +19,14 @@
             {%- set comma = "\n, " -%}
         {%- endif -%}
     {%- endif %}
-    {%- for days in ma_days -%}
+    {%- for split_value in ma_windows -%}
         {%- if loop.index > 1 %}
             {%- if comma_at_end == false -%}
                 {%- set comma = "\n, " -%}
             {%- endif -%}
         {%- endif %}
         {%- set column_alias -%}
-            {{ clean_column }}_{{ days }}{{ grain }}_ma
+            {{ clean_column }}_{{ split_value }}{{ grain }}_ma
         {%- endset -%}
         {%- if comma_at_end == false -%} {{- comma -}} {%- endif -%}
         {{- space -}}avg(
@@ -40,7 +40,7 @@
         {%- if dimensions -%}
             partition by {{ dimensions | join(", ") }}
         {%- endif -%}
-        {{- space -}}order by {{ date_field }} rows between {{ days - 1}} preceding and current row) as {{ column_alias }}
+        {{- space -}}order by {{ date_field }} rows between {{ split_value - 1}} preceding and current row) as {{ column_alias }}
          {%- if comma_at_end == true -%}
             {%- if column_name == final_column_name and loop.last -%}
                 {# For the final iteration, no comma. #}
