@@ -1,5 +1,5 @@
 name: 'cbc_utils'
-version: '0.0.1'
+version: '0.0.3'
 
 require-dbt-version: [">=1.6.0", "<1.9.0"]
 
