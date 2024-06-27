@@ -98,3 +98,30 @@ from revenue
 , coalesce(lag(total_revenue, 365) over (partition by r.location_id order by r.date_at), 0) as total_revenue_365d_pop
 <--... continues for each column ...-->
 ```
+
+Here's the addition you can make to the existing documentation, following the same style:
+
+### `bridge_waterfall` - Generate Bridge Waterfall Chart
+
+This macro creates a model that can be used to create a bridge waterfall type chart that allows for multiple periods and week, month, quarter, and year charts.
+
+#### Arguments
+- `model` (required): The name of the model to use for the chart.
+- `period` (required): The time period for the chart. Can be 'week', 'month', 'quarter', or 'year'.
+- `date_field` (required): The date field to use for the chart.
+- `dimension` (required): The dimension to group the data by.
+- `metric` (required): The metric to measure in the chart.
+- `start_date` (optional): The start date for the chart data.
+
+#### Example Usage
+
+```sql
+{{ cbc_utils.bridge_waterfall(model='billed_vs_paid_metrics',
+                    period='month',
+                    date_field='date_at',
+                    dimension='business_unit',
+                    metric='billed_total_dollars',
+                    start_date='2024-01-01') }}
+```
+
+This macro will generate a SQL query that creates a bridge waterfall chart based on the specified parameters. The resulting chart will show how the specified metric changes over time for each category in the given dimension, starting from the provided start date.
