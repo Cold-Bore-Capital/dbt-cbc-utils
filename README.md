@@ -106,21 +106,41 @@ Here's the addition you can make to the existing documentation, following the sa
 This macro creates a model that can be used to create a bridge waterfall type chart that allows for multiple periods and week, month, quarter, and year charts.
 
 #### Arguments
-- `model` (required): The name of the model to use for the chart.
 - `period` (required): The time period for the chart. Can be 'week', 'month', 'quarter', or 'year'.
 - `date_field` (required): The date field to use for the chart.
 - `dimension` (required): The dimension to group the data by.
 - `metric` (required): The metric to measure in the chart.
+- `model` (optional, however either `model` or `cte` is required): The name of the model to use for the chart.
+- `cte` (optional, however either `model` or `cte` is required): If the macro is being used after a CTE, the name of the CTE to use for the chart.
+- `filter_dimensions` (optional): A list of dimensions to filter the data by. These can be used as filters only, not as dimensions in the chart.
 - `start_date` (optional): The start date for the chart data.
 
 #### Example Usage
 
+##### With a model:
 ```sql
-{{ cbc_utils.bridge_waterfall(model='billed_vs_paid_metrics',
+{{ cbc_utils.bridge_waterfall(
                     period='month',
                     date_field='date_at',
                     dimension='business_unit',
                     metric='billed_total_dollars',
+                    model='billed_vs_paid_metrics',
+                    start_date='2024-01-01') }}
+```
+
+##### With a cte:
+```sql
+with data_input as (
+    select *
+    from my data
+), 
+{{ cbc_utils.bridge_waterfall(
+                    period='month',
+                    date_field='date_at',
+                    dimension='business_unit',
+                    metric='billed_total_dollars',
+                    cte='billed_vs_paid_metrics',
+                    filter_dimensions=['end_market'],
                     start_date='2024-01-01') }}
 ```
 
