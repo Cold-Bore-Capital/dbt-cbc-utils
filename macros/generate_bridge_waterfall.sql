@@ -39,34 +39,102 @@
     {% set full_date_char = "to_char(waterfall_date_at, 'YYYY-MM-DD')" %}
 {%- endif -%}
 
-
-{%- if model -%}with {% endif %} {{ metric }}_by_{{ period }}_bu as (
-    select
-          {{ dbt.date_trunc(period, date_field) }} as waterfall_date_at
-         , {{ dimension }}
+-- If a model is specified, it will be referenced in the `from` statement. If no model is specified, it's assumed that
+-- the macro is being called from within a CTE, and the `with` should be omitted.
+{% if model -%}with {% endif %} {{ metric }}_by_{{ period }}_bu as (
+    with raw_data as (
+        select {{ date_field }}
+            , {{ dimension }}
             {%- if filter_dimensions %}
             {%- for filter_dim in filter_dimensions %}
-         , {{ filter_dim }}
+            , {{ filter_dim }}
             {%- endfor %}
             {%- endif %}
-         , sum({{ metric }})  as {{ metric }}
-    from {% if model -%}{{ ref(model) }}{% else %}{{ cte }}{% endif %}
-    {%- if start_date is not none %}
-    where date({{ date_field }}) between '{{ start_date }}' and {{ dbt.dateadd(datepart='second',
-                                                                               interval=-1,
-                                                                               from_date_or_timestamp=dbt.date_trunc(period, dbt.current_timestamp())) }}
-    {%- else %}
-    where date({{ date_field }}) < {{ dbt.dateadd(datepart='second',
-                                                  interval=-1,
-                                                  from_date_or_timestamp=dbt.date_trunc(period, dbt.current_timestamp())) }}
-    {% endif %}
-group by waterfall_date_at
+            , {{ metric }}
+        from {% if model -%}{{ ref(model) }}{% else %}{{ cte }}{% endif %}
+        {%- if start_date is not none %}
+        where date({{ date_field }}) between '{{ start_date }}' and {{ dbt.dateadd(datepart='second',
+                                                                                           interval=-1,
+                                                                                           from_date_or_timestamp=dbt.date_trunc(period, dbt.current_timestamp())) }}
+        {%- else %}
+        where date({{ date_field }}) < {{ dbt.dateadd(datepart='second',
+                                                              interval=-1,
+                                                              from_date_or_timestamp=dbt.date_trunc(period, dbt.current_timestamp())) }}
+        {% endif %}
+    )
+
+    , date_cte as (
+        select distinct {{ dbt.date_trunc(period, date_field) }} as waterfall_date_at
+
+        from raw_data
+
+    )
+    , dimensions_cte as (
+        with primary as (
+            select distinct {{ dimension }}
+            from raw_data
+        )
+        {%- if filter_dimensions %}
+        {%- for filter_dim in filter_dimensions %}
+        , {{ filter_dim }}_cte as (
+            select distinct {{ filter_dim }}
+            from raw_data
+        )
+        {%- endfor %}
+        {%- endif %}
+        select primary.{{ dimension }}
+            {%- if filter_dimensions %}
+            {%- for filter_dim in filter_dimensions %}
+            , {{ filter_dim }}_cte.{{ filter_dim }}
+            {%- endfor %}
+            {%- endif %}
+        from primary
+        {%- if filter_dimensions %}
+        {%- for filter_dim in filter_dimensions %}
+        cross join {{ filter_dim }}_cte
+        {%- endfor %}
+        {%- endif %}
+
+        )
+    , data_cte as (
+select
+    {{ dbt.date_trunc(period, date_field) }} as waterfall_date_at
     , {{ dimension }}
     {%- if filter_dimensions %}
-    {%- for dimension in filter_dimensions %}
-    , {{ dimension }}
+    {%- for filter_dim in filter_dimensions %}
+    , {{ filter_dim }}
     {%- endfor %}
     {%- endif %}
+    , {{ metric }}  as {{ metric }}
+    from raw_data
+
+    )
+    select
+          date_cte.waterfall_date_at
+         , dim.{{ dimension }}
+            {%- if filter_dimensions %}
+            {%- for filter_dim in filter_dimensions %}
+         , dim.{{ filter_dim }}
+            {%- endfor %}
+            {%- endif %}
+         , coalesce(sum(data_cte.{{ metric }}), 0)  as {{ metric }}
+    from date_cte
+    cross join dimensions_cte as dim
+
+    left join data_cte on date_cte.waterfall_date_at = data_cte.waterfall_date_at
+        and dim.{{ dimension }} = data_cte.{{ dimension }}
+        {%- if filter_dimensions %}
+        {%- for filter_dim in filter_dimensions %}
+        and dim.{{ filter_dim }} = data_cte.{{ filter_dim }}
+        {%- endfor %}
+        {%- endif %}
+    group by date_cte.waterfall_date_at
+           , dim.{{ dimension }}
+        {%- if filter_dimensions %}
+        {%- for dimension in filter_dimensions %}
+           , dim.{{ dimension }}
+        {%- endfor %}
+        {%- endif %}
     )
 
 , {{ metric }}_changes as (
@@ -110,18 +178,18 @@ group by waterfall_date_at
     )
 -- These prefixes
  , hidden_prefixes as (
-select 1 period , '\u200B' as hidden_value union all
-select 2 period , '\u200C' as hidden_value union all
-select 3 period , '\u200D' as hidden_value union all
-select 4 period , '\u200E' as hidden_value union all
-select 5 period , '\u200F' as hidden_value union all
-select 6 period , '\u2060' as hidden_value union all
-select 7 period , '\u202A' as hidden_value union all
-select 8 period , '\u202B' as hidden_value union all
-select 9 period , '\u202C' as hidden_value union all
-select 10 period , '\u202D' as hidden_value union all
-select 11 period , '\u202E' as hidden_value union all
-select 12 period , '\u202F' as hidden_value union all
+select 1 as period , '\u200B' as hidden_value union all
+select 2 as period , '\u200C' as hidden_value union all
+select 3 as period , '\u200D' as hidden_value union all
+select 4 as period , '\u200E' as hidden_value union all
+select 5 as period , '\u200F' as hidden_value union all
+select 6 as period , '\u2060' as hidden_value union all
+select 7 as period , '\u202A' as hidden_value union all
+select 8 as period , '\u202B' as hidden_value union all
+select 9 as period , '\u202C' as hidden_value union all
+select 10 as period , '\u202D' as hidden_value union all
+select 11 as period , '\u202E' as hidden_value union all
+select 12 as period , '\u202F' as hidden_value union all
 select 13 as period , '\u200B\u200B' as hidden_value union all
 select 14 as period , '\u200C\u200C' as hidden_value union all
 select 15 as period , '\u200D\u200D' as hidden_value union all
@@ -185,8 +253,7 @@ select
     , {{ full_date_char_rc }}
     || '-'
     || lpad((rank() over
-        (partition by rc.{{ dimension }}
-        order by rc.waterfall_date_at, rc.{{ dimension }}) + 1)::varchar, 3, '0')    as sort_order
+        (order by rc.waterfall_date_at, rc.{{ dimension }}) + 1)::varchar, 3, '0')    as sort_order
     , hp.hidden_value || rc.{{ dimension }}                       as label
     -- , rc.{{ dimension }}
     {%- if filter_dimensions %}
@@ -358,6 +425,7 @@ select
 
 from final
 where value is not null
+and label is not null
 order by sort_order, bar_type desc
 
 {%- endmacro -%}
