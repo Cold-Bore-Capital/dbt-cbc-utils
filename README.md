@@ -20,7 +20,7 @@ This approach is only useful for highly aggregated models without a large number
 - `date_field` (required): The date field to generate the moving average over.
 - `dimensions` (required): A list of dimensions to partition the moving average over. 
 - `ma_windows` (required): A list of integers representing the number of days/weeks/months/years to calculate the moving average over. For example, [7, 14, 28] will generate columns for 7, 14, and 28 day moving averages if the grain is set to `d` (and each row represents one day).
-- `grain` (optional): The grain of the moving average. Default is 'd' for daily.
+- `grain` (optional): The grain of the moving average. Default is 'd' for daily. This is used to set the display label. 
 - `add_coalesce` (optional): If set to true, a coalesce function will be wrapped around the value in the moving average. Default is true. Example with `avg(coalesce(total_revenue,0)) over (partition by location_id order by date_at rows between 6 preceding and current row) as total_revenue_7d_ma` and without `avg(total_revenue) over (partition by location_id order by date_at rows between 6 preceding and current row) as total_revenue_7d_ma`
 - `comma_at_end` (optional): If set to `true`, a comma will be added at the end of the generated column. If `false`, the comma will be placed at the start of the row. Default is `true`.
 
@@ -39,8 +39,8 @@ select
     {{ cbc_utils.generate_ma_columns(column_names =['revenue', 'utilized_hours', 'non_utilized_hours'],
                         date_field='date_at',
                         dimensions=['location_id'],
-                        ma_windows=[7], -- You could put 7, 14, 28 and columns will generate for each.
-                        grain='d', -- This is for display purposes. The column name will be set using this value.
+                        ma_windows=[7], 
+                        grain='d', 
                         add_coalesce=true) }}
 from revenue
 ```
@@ -53,7 +53,7 @@ avg(coalesce(service_revenue,0)) over (partition by location_id order by date_at
 
 #### Important Note: Missing Columns and Moving Averages
 
-In a scenario where a value is missing for a given row, the results of a chart will appear wrong. In the example above, if the date/location cross join was not present, on days where a location is not open, no row will exist and a MA for that day will not display. Cross joining with a date/location table is a common practice to ensure that all dates are present in the dataset.
+In a scenario where a value is missing for a given row, the results of a chart will appear wrong. In the example above, if the date/location cross join was not present, on days when a location is not open, no row will exist and a MA for that day will not display. Cross joining with a date/location table is a common practice to ensure that all dates are present in the dataset.
 
 ### `generate_pop_columns` - Generate Period Over Period Columns
 This macro is used to generate a series of period-over-period columns.
@@ -82,7 +82,7 @@ select
                                         date_field= 'date_at',
                                         dimensions = ['location_id'],
                                         look_back_values = [28, 90, 180, 365],
-                                        grain = 'd', -- This is for display purposes. The column name will be set using this value.
+                                        grain = 'd',
                                         comma_at_end=false) }}
 from revenue
 
