@@ -112,7 +112,6 @@ This macro creates a model that can be used to create a bridge waterfall type ch
 - `metric` (required): The metric to measure in the chart.
 - `model` (optional, however either `model` or `cte` is required): The name of the model to use for the chart.
 - `cte` (optional, however either `model` or `cte` is required): If the macro is being used after a CTE, the name of the CTE to use for the chart.
-- `filter_dimensions` (optional): A list of dimensions to filter the data by. These can be used as filters only, not as dimensions in the chart.
 - `start_date` (optional): The start date for the chart data.
 
 #### Example Usage
@@ -140,8 +139,28 @@ with data_input as (
                     dimension='business_unit',
                     metric='billed_total_dollars',
                     cte='billed_vs_paid_metrics',
-                    filter_dimensions=['end_market'],
                     start_date='2024-01-01') }}
 ```
 
 This macro will generate a SQL query that creates a bridge waterfall chart based on the specified parameters. The resulting chart will show how the specified metric changes over time for each category in the given dimension, starting from the provided start date.
+
+### `day_normalized_weekly_revenue` - Generate Day Normalized Weekly Revenue
+This macro creates a weekly average value by taking the average of each day in the week, then adding the averages up. This eliminates variability caused by month to month differences in number of days in the month, and day composition (one month may have an extra Monday for example). 
+
+#### Arguments
+- `model` (either `model` or `cte` required): The name of the model to use for the chart.
+- `cte` (either `model` or `cte` required): The name of the cte to use for the chart.
+- `date_field` (required): The date field to use for the chart.
+- `metrics` (required): A list of metrics to measure in the chart.
+- `dimensions` (required): A list of dimensions to group the data by.
+
+##### Example Usage with a model name
+```sql
+{{ day_normalized_weekly_revenue(
+model='fct_schedules_mat',
+date_field='work_date_at',
+metrics=['billed_total_dollars', 'billed_total_hours'],
+dimensions=['business_unit', 'end_market', 'job_state', 'customer_name']
+) }}
+
+```
