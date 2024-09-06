@@ -285,7 +285,7 @@ from {{ metric }}_changes as rc
     -- month(rc.waterfall_date_at) = hp.period
     left join hidden_prefixes as hp on {{ period }}(rc.waterfall_date_at) = hp.period
 -- This filter is configured so that the total for the final {{ period }} will be in the data, but the period change components will not.
-where rc.waterfall_date_at < {{ dbt.date_trunc(period, dbt.dateadd('{{ period }}', -1, dbt.current_timestamp())) }}
+where rc.waterfall_date_at < {{ dbt.date_trunc(period, dbt.dateadd(period, -1, dbt.current_timestamp())) }}
 
 -- date_trunc('{{ period }}', dateadd('days', -1, date_trunc('{{ period }}', dbt.current_timestamp())))
 
