@@ -188,7 +188,7 @@ select 7 as period , '\u202A' as hidden_value union all
 select 8 as period , '\u202B' as hidden_value union all
 select 9 as period , '\u202C' as hidden_value union all
 select 10 as period , '\u202D' as hidden_value union all
-select 11 as period , '\u202E' as hidden_value union all
+select 11 as period , '\u200B\u202C' as hidden_value union all
 select 12 as period , '\u202F' as hidden_value union all
 select 13 as period , '\u200B\u200B' as hidden_value union all
 select 14 as period , '\u200C\u200C' as hidden_value union all
@@ -200,7 +200,7 @@ select 19 as period , '\u202A\u202A' as hidden_value union all
 select 20 as period , '\u202B\u202B' as hidden_value union all
 select 21 as period , '\u202C\u202C' as hidden_value union all
 select 22 as period , '\u202D\u202C' as hidden_value union all
-select 23 as period , '\u202E\u202E' as hidden_value union all
+select 23 as period , '\u200B\u202C\u200B\u202C' as hidden_value union all
 select 24 as period , '\u202F\u202F' as hidden_value union all
 select 13 as period , '\u200B\u200B\u200D' as hidden_value union all
 select 14 as period , '\u200C\u200C\u200D' as hidden_value union all
@@ -212,7 +212,7 @@ select 19 as period , '\u202A\u202A\u200D' as hidden_value union all
 select 20 as period , '\u202B\u202B\u200D' as hidden_value union all
 select 21 as period , '\u202C\u202C\u200D' as hidden_value union all
 select 22 as period , '\u202D\u202C\u200C' as hidden_value union all
-select 23 as period , '\u202E\u202E\u200D' as hidden_value union all
+select 23 as period , '\u200B\u202C\u200B\u202C\u200D' as hidden_value union all
 select 24 as period , '\u202F\u202F\u200D' as hidden_value union all
 select 25 as period , '\u200B\u200B\u200B' as hidden_value union all
 select 26 as period , '\u200C\u200C\u200C' as hidden_value union all
@@ -224,7 +224,7 @@ select 31 as period , '\u202A\u202A\u202A' as hidden_value union all
 select 32 as period , '\u202B\u202B\u202B' as hidden_value union all
 select 33 as period , '\u202C\u202C\u202C' as hidden_value union all
 select 34 as period , '\u202D\u202D\u202D' as hidden_value union all
-select 35 as period , '\u202E\u202E\u202E' as hidden_value union all
+select 35 as period , '\u200B\u202C\u200B\u202C\u200B\u202C' as hidden_value union all
 select 36 as period , '\u202F\u202F\u202F' as hidden_value union all
 select 37 as period , '\u200B\u200B\u200B\u200B' as hidden_value union all
 select 38 as period , '\u200C\u200C\u200C\u200C' as hidden_value union all
@@ -236,7 +236,7 @@ select 43 as period , '\u202A\u202A\u202A\u202A' as hidden_value union all
 select 44 as period , '\u202B\u202B\u202B\u202B' as hidden_value union all
 select 45 as period , '\u202C\u202C\u202C\u202C' as hidden_value union all
 select 46 as period , '\u202D\u202D\u202D\u202D' as hidden_value union all
-select 47 as period , '\u202E\u202E\u202E\u202E' as hidden_value union all
+select 47 as period , '\u200B\u202C\u200B\u202C\u200B\u202C\u200B\u202C' as hidden_value union all
 select 48 as period , '\u202F\u202F\u202F\u202F\u200F' as hidden_value union all
 select 49 as period , '\u202F\u202F\u202F\u202F\u2060' as hidden_value union all
 select 50 as period , '\u202F\u202F\u202F\u202F\u202A' as hidden_value union all
@@ -285,7 +285,7 @@ from {{ metric }}_changes as rc
     -- month(rc.waterfall_date_at) = hp.period
     left join hidden_prefixes as hp on {{ period }}(rc.waterfall_date_at) = hp.period
 -- This filter is configured so that the total for the final {{ period }} will be in the data, but the period change components will not.
-where rc.waterfall_date_at < {{ dbt.date_trunc(period, dbt.dateadd('month', -1, dbt.current_timestamp())) }}
+where rc.waterfall_date_at < {{ dbt.date_trunc(period, dbt.dateadd('{{ period }}', -1, dbt.current_timestamp())) }}
 
     -- date_trunc('{{ period }}', dateadd('days', -1, date_trunc('{{ period }}', dbt.current_timestamp())))
 
